@@ -3,7 +3,7 @@ title: First article
 date: 13:40 01/13/2019
 author: Jan-Gerke Salomon
 header_image: image.jpg
-subheading: This is the first blog article used for some testing
+subheading: This is the first blog article used for some testing.
 ---
 
 <style>
