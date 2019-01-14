@@ -2,7 +2,7 @@
 title: FP Ninja
 menu: Home
 subheading: Random stuff by a guy who happens to have a blog o.O
-header_image: header_img.jpg
+header_image: header_img.png
 
 content:
     items: @self.children
