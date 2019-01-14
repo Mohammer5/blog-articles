@@ -1,12 +1,10 @@
 ---
-title: About Me
-menu: About
-subheading: This is what I do.
+title: Impressum
+menu: Imprint
+subheading: Angaben gem&auml;&szlig; &sect; 5 TMG
 header_image: about-bg.jpg
 ---
 
-<h1>Impressum</h1>
-<h2>Angaben gem&auml;&szlig; &sect; 5 TMG</h2>
 <p>Jan-Gerke Salomon<br />
 Leibnizstr. 1<br />
 76137 Karlsruhe</p>
