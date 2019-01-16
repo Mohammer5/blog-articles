@@ -99,12 +99,13 @@ codebase.
 
 ### A library's structure
 
-The underlying concept of structuring a library is a hierarchy tree. There is 
-one root hierarchy: The type of the medium, e. g. Novel, Newspaper, scientific 
-literature, DVD, etc. The second hierarchy are general topics which depend on 
-the root hierarchy. Topics of Novels may contain SciFi, Fantasy, Thriller, 
-while topics of scientific literature might be Biology, Information technology, 
-Physics, Geology, Geography, you name it.
+The underlying concept of organizing physical object a library is a hierarchy 
+tree. There is  one root hierarchy: The type of the medium, e. g. Books,
+Newspaper, DVD, etc. The second hierarchy are general 
+topics which depend on  the root hierarchy. Topics of Books can be novels,
+scientific literatur, and topics of novels may contain SciFi,
+Fantasy, Thriller,while topics of scientific literature might be Biology,
+Information technology, Physics, Geology, Geography, you name it.
 
 Obviously this follows a pattern which isn't clearly defined but rather 
 abstract. In theory the root hierarchy could also consist of something
@@ -115,13 +116,13 @@ pattern:
 
 <div class="highlighted">
 One level of a hierarchy has to devide all containing items into exclusive
-roles.
+domains.
 </div>
 <br>
 Of course this will cause some friction as some books may contain several
 topics. But it's imporant to stick to the rule, there should be no exception.
 So if there's a book about music and the effects on the brain (which is arguably
-biology), instead of putting it in either on of them or both, we can create a
+biology), instead of putting it in either one of them or both, we can create a
 new category, e. g. "Mixed topics". That might be a little overcomplicated for
 a library but when working with code, at least when following the library
 pattern, it's a necessity. Luckily, we won't have to make up funny names like
@@ -131,7 +132,7 @@ names anyways.
 ### A project's structure
 
 In a library the name of the root category is obvious: `Library`. In the
-library architecture there can be one or more root root categories. They are
+library architecture there can be one or more root categories. They are
 the index files of our application. Let's think about a web application that
 let's us both view and modify a pdf file. We'd have to entry files:
 
@@ -153,12 +154,12 @@ this:
 </code></pre>
 </div>
 <br>
-There should be no other file or directory on this level! It's seperating our
+There should be no other file or directory on this level! It's separating our
 code base into exclusive problem domains.
 
 #### The lib folder
 
-The name doens't really matter, it could be `helper` or anything else that 
+The name doesn't really matter, it could be `helper` or anything else that 
 fits. The idea is that code inside this directory has the following purpose:
 
 Transformation on data will be expressed in functions (which will do the
@@ -214,3 +215,53 @@ changed.
 1. handle state that depends on other state so we neither
 clutter the data state with derived state nor recalculate everytime
 the state needs to update.
+
+### Composability
+
+We need to find a way to handle these problem domains in a way that we can
+define units which are composable. Then we'll be able to refactor and
+extend our functionality easily, otherwise we'd end up with many
+concretions which are less reusable, harder to maintain and generally
+increase the cognitive load.
+
+### Seperation of concerns
+
+As we can see, I've separated the different things we need to do
+in order to have a good overview on how we manage our application.
+This is the reason why I don't like some heavily used libraries with
+redux like redux-thunk. It mixes the intention domain with the IO domain.
+
+So when looking inside the actions directory of our application, there's
+no way to know which action creator returns an object or a function,
+which means it's non-deterministic to know where our IO code is.
+Of course this could be expressed in the name of the action creator, 
+but that would violate being declarative instead of imperative.
+
+#### Defining intentions
+
+This is an easy one. With redux we express intentions in actions that can be
+dispatched to trigger a state change
+
+#### Changing the state
+
+This is obviously the role of the reducers. They'll take incoming actions and
+the current state to produce a new state.
+
+#### Handling IO / Side effects
+
+This is a bit more tricky as it's not part of the redux library by default.
+There are some approaches out there, the 3 most common are: redux-thunk,
+redux-saga and redux-observable.
+
+The reason why I reject redux-thunk is mentioned above.
+Then there is redux-saga which is a better approach already as we separate
+IO into it's own problem domain, it's not mixed with the actions anymore.
+And it's a reasonable choice until you have more complex asynchronicity
+in your project.
+
+This is where the true power of redux-observable is visible. Using RxJs
+to work on a stream of actions, which will emit a new action at some point
+and also moves the IO / Sideeffect into it's own problem domain.
+But we can do a lot more with redux than just that. We can cancel streams,
+complete streams, compose streams, intertwine streams, etc, which is
+why redux-observable is my favorite!
