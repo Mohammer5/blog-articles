@@ -1,10 +1,10 @@
 <!--
 ---
-title: A practical guide to writing projects with functional programming
-date: 13:40 01/13/2019
+title: The library pattern
+date: 20:00 01/17/2019
 author: Jan-Gerke Salomon
 header_image: image.jpg
-subheading: Or how to avoid ending up with a mess that no one wants to touch anymore, not even future-you
+subheading: A practical guide to organizing projects with functional programming
 ---
 -->
 
@@ -60,7 +60,8 @@ Organizing Your Project: A Librarian’s Tale
 
 [Link to the chapter]( https://www.braveclojure.com/organization/)
 <br><br>
-The chapter was about a project's structure, so I kept asking myself what
+The chapter is about the tools you have in clojure to structure your project,
+so I kept asking myself what
 the codebase would look like if I approach it like I would expect a library
 to be organized like. What I came up with since I first started to think about
 this approach will be summarized in this article.
@@ -144,13 +145,13 @@ which we'll need for the editor only. But it's 100% clear that we'll need
 files/functionality for both of them, so the file structure should look like
 this:
 
-<div class="highlighted" style="padding-top: 0; padding-bottom: 0;">
-<pre><code>/----------
--- editor/
--- lib/
--- view/
--- editor.js
--- view.js
+<div class="highlighted" style="padding-top: 0; padding-bottom: 0; background: #272822;">
+<pre style="background: none"><code><span style="color: #A6E22E;">/ src/</span>
+<span style="color: #A6E22E;">/-- editor/</span>
+<span style="color: #A6E22E;">/-- lib/</span>
+<span style="color: #A6E22E;">/-- view/</span>
+<span style="color: #FD971F;">/-- editor.js</span>
+<span style="color: #FD971F;">/-- view.js</span>
 </code></pre>
 </div>
 <br>
@@ -224,7 +225,7 @@ extend our functionality easily, otherwise we'd end up with many
 concretions which are less reusable, harder to maintain and generally
 increase the cognitive load.
 
-### Seperation of concerns
+### Separation of concerns
 
 As we can see, I've separated the different things we need to do
 in order to have a good overview on how we manage our application.
@@ -259,9 +260,276 @@ IO into it's own problem domain, it's not mixed with the actions anymore.
 And it's a reasonable choice until you have more complex asynchronicity
 in your project.
 
-This is where the true power of redux-observable is visible. Using RxJs
-to work on a stream of actions, which will emit a new action at some point
-and also moves the IO / Sideeffect into it's own problem domain.
+This is where the true power of redux-observable shines through. Using RxJs
+to work on a stream of actions will also moves the IO / Sideeffect into 
+it's own problem domain.
 But we can do a lot more with redux than just that. We can cancel streams,
 complete streams, compose streams, intertwine streams, etc, which is
 why redux-observable is my favorite!
+
+#### Handling derived state
+
+A good example for derived state is the redux todo app that you probably
+came across when you got into redux. It includes a filter mechanism
+to display only a subset of of the todos. So you'll end up with to
+collections of todos - The complete one and the visible ones.
+
+You could easily filter out the visible ones on each rerender, which
+won't have a huge performance impact within the todo app, but larger
+applications shouldn't do that.
+Another way of storing this is by using a stateful react component.
+It works, is performant but has several problems:
+
+1. You don't separate concerns anymore. Ideally views only solve
+the view problem domain.
+2. The view is either less reusable or increases the cognitive load
+if you read through the code for the first time and want to understand
+how the component works.
+3. If you don't know that the component has it's own state, you
+won't know where to look for state in your application when you're
+new to the project
+4. You won't know that another state came into the application
+if another dev added it unless you actually look at the merged code
+every time there's a merge
+
+Alternatively you can create a new filtered collection everytime
+either a todo is added or the filter changes. If you do this
+in the reducers - which means you have two cases for one action 
+(which is totally fine, no problems with that) - you run into weird
+scenarios. Is the todo already added to the complete collection before
+you filter it or not? You don't know, so you need to perform a check 
+which is generally an anti pattern. So you would need to keep an eye
+on the order of reducers combined in the root reducer, which is
+ridiculous as it increases the complexity enormously.
+
+The answer to this problem: [reselect](https://github.com/reduxjs/reselect)<br>
+In cobination with redux-react, it becomes quite easy to handle derived data.
+I encourage you to read through the README if you haven't done so yet!
+
+### Conclusion
+
+We now solve the 4 state problem domains, we solve the data transformation
+domain (the lib folder) and the presentation domain (in the example above,
+it's the view end editor folders).
+As the redux parts are neither part of the transformation nor the
+presentation domain, I like to give redux it's own folder on the root level:
+
+<div class="highlighted" style="padding-top: 0; padding-bottom: 0; background: #272822;">
+<pre style="background: none;"><code><span style="color: #A6E22E;">| src/</span>
+<span style="color: #A6E22E;">|-- editor/</span>
+<span style="color: #FD971F;">|---- rootEpic.js</span>
+<span style="color: #FD971F;">|---- rootReducer.js</span>
+<span style="color: #FD971F;">|---- configureStore.js</span>
+<span style="color: #A6E22E;">|-- lib/</span>
+<span style="color: #A6E22E;">|-- redux/</span>
+<span style="color: #A6E22E;">|---- actions/</span>
+<span style="color: #A6E22E;">|---- epics/</span>
+<span style="color: #A6E22E;">|---- reducers/</span>
+<span style="color: #A6E22E;">|---- selectors/</span>
+<span style="color: #FD971F;">|---- configureStore.js</span>
+<span style="color: #A6E22E;">|-- view/</span>
+<span style="color: #FD971F;">|---- rootEpic.js</span>
+<span style="color: #FD971F;">|---- rootReducer.js</span>
+<span style="color: #FD971F;">|---- configureStore.js</span>
+<span style="color: #A6E22E;">|-- editor.js</span>
+<span style="color: #A6E22E;">|-- view.js</span>
+</code></pre>
+</div>
+<br>
+
+As you can see, I've populated some folders with files already.
+We obviously can't put the rootReducer and store into the redux folder
+as they'll differ from entrypoint to entrypoint, but we can share the
+reducers and just combine them to the rootReducers in the editor and
+view folders.
+
+The reason why there are three configureStore files is:
+We provide a higher order function in the redux/configureStore.js file,
+which requires the reducers and epics as arguments, then returns
+a function which will setup the store.
+
+## Architectural details
+
+Of course - with the groundwork layed out - we're now able to setup
+a project so we can work more efficiently, but there are still some
+notes I'd like to add in regards to details, technologies and 
+dependencies.
+
+### Action type constants
+
+There are a few ways where you can store your action types,
+in my opinion there's only one fixed rule. It needs to be inside
+the actions folder! Just think of the library again, where else
+would you look for action types. The most obvious place is usually 
+the right place!
+
+#### Constants file vs in-action-creator-file
+
+There are pros and cons for putting actions into constants files.
+So there's no write or wrong, personally I prefer to put the type 
+in the same file where I put the action creator function,
+here's an example how I do it with  typescript:
+
+```js
+import {Action} from '../index';
+import {Streak} from '../../../../lib/streak';
+
+export type AddNewStreakPayload = Streak;
+export const ADD_NEW_STREAK = Symbol();
+export type CreateAddNewStreakAction = (streak: AddNewStreakPayload) => Action<AddNewStreakPayload>;
+export const createAddNewStreakAction: CreateAddNewStreakAction =
+    streak => ({
+        type: ADD_NEW_STREAK,
+        payload: streak,
+    });
+```
+
+Everything you need to know about the add new streak action is inside this file.
+You know what the payload should look like, you know the type constant, and
+as you can see, the streak protocol (more on that later) is inside the lib folder.
+
+### Code of reducers
+
+Regardless of what you use to differentiate between incoming actions
+(switch, if/else or the ternary operator - the last one being my
+favorite), the it's important to now define transformations of data,
+the state in this case, inside the redux folder.
+The reducers should use transformation functionality from the src/lib
+folder for two very simple reasons:
+
+1. It'll be obvious when transformations are stored in one place only.
+1. If you ever decide do dump redux because you've found a better 
+alternative, you won't have to split the transformation on data from
+the redux code, it's already separate.
+
+This doesn't mean that you need to wrap everything in a function.
+Appending an item to an array can still be done like this inside
+the reducer:
+
+```js
+[ ...items, newItem ]```
+
+### RxJs
+
+This is such a powerful library and functional reactive programming
+is a very nice approach. But - and this is important - if overused,
+**code becomes very complicated, which should be avoided at all costs!**
+This is why I think that RxJs should be used for epics only!
+That's where we handle side effects, asyncronous code execution, etc.
+With redux-observable things become very easy to understand/read.
+So let me say this again:
+
+<div class="highlighted">
+Inside a redux application, don't use RxJs anywhere but for creating
+epics! Period.
+</div>
+<br>
+
+Don't wrap ajax calls with an Observable, a promise will do fine!
+You can switchMap (or use sth different) to a stream inside the epic!
+This will allow you to use the ajax calls with async/await if you need
+this somewhere else in your code (which you ideally don't as side effects
+should be handled by epics), but you can easily compose promise based ajax
+calls, extract them into their own library if your project contains multiple
+front end applications that work on the same backend and you're not bound
+to the RxJs dependency!
+
+Another good reason is that promises are simple, RxJs can make things
+complicated quite quickly, which - again - should be avoided at all costs.
+
+### Lodash
+
+Use lodash/fp only. Become familiar with the differences to the normal
+lodash, there's a (lodash/fp guide)[] that will tell you all the differences.
+
+#### Built-ins vs lodash/fp functions
+
+Using the lodash/fp functions enables you to bring function composition to
+the next level. And I strongly encourage to make use of the lodash/fp
+functions when glueing units together, especially with compose/pipe!
+
+But when you're actually transforming data, use the built-ins!
+This will give you the oportunity to chain commands, like:
+
+```js
+collection
+    .filter(/* callback */)
+    .map(/* callback */)
+    .sort(/* callback */)
+    .reduce(/* callback */)
+;
+```
+
+Doing the same operations with the lodash/fp functions just increases
+the complexity and therefore the cognitive load when reading through code.
+
+### One function, one job
+
+Every function should do one thing only while the name is declarative
+and not imperative! That means that your function's name describes
+WHAT's being done and not HOW!
+
+You might ask "But if a function is doing one thing only, how can I
+have multiple function calls inside a function".
+
+You still can! Just make sure that the name of the function describes
+one operation, let's look at an example:
+We have a list of todos but want a list of visible todos, so we create
+a function `extractVisibleTodos`.
+
+The name doesn't tell us how the operation is done, it just tells us
+what's being done. Internally the function can filter out inactive todos,
+the filter for keywords, then group the result by pagination and return
+the first page. 
+So the function does multiple things while doing one thing only:
+Extracting the todos that should be shown from a list of todos.
+
+### One unit per file vs one file containing a group of units
+
+There's no true answer to this question. Many people think that
+separating every function into its own file will just make you
+jump from file to file while reading through code.
+And it's true, you'll spend more time looking through files
+if you want to know how things work.
+
+But there's a fundamental difference between wanting to know
+how things work and what things do (declarative vs imperative).
+If done properly, no file will have more than 10 imports,
+most likely it'll have 2-5, which is a very reasonable amount.
+
+When named correctly, fuzzy file search becomes a true blessing.
+You just open the fuzzy search and enter the namespace and
+part of the function's name that you're looking for and
+you're almost there.
+
+Searching large files for a specific function doesn't really solve
+the problem either, in the contrary, it will invite you do
+ignore the library pattern and just put things where you want
+to use it.
+
+### Organizing propTypes in react components
+
+Many times I was unsatisfied with react when I had to update the propTypes
+of 5 components because of a propTypes update of a component deeply nested
+within the application.
+
+Then I found an article describing a way to get around this, and it works
+really well with the mapStateToProps of the redux-react lib.
+
+Let's say we have a simple button component, called Action, that accepts
+the following properties: Label, Primary (for styling) and onClick:
+
+```js
+export const Action = props => ({
+    <button
+        onClick={props.onClick}
+        className={[
+            'action',
+            props.primary ?
+                'button--primary' :
+                button--default
+        ].join(' ')}
+    >
+        {props.label}
+    </button>
+});```
