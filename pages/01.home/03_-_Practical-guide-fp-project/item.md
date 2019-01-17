@@ -2,6 +2,7 @@
 title: The library pattern
 date: 15:30 01/17/2019
 author: Jan-Gerke Salomon
+header_image: image.jpg
 subheading: A practical guide to organizing projects with functional programming
 ---
 
