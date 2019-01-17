@@ -7,13 +7,12 @@ subheading: A practical guide to organizing projects with functional programming
 ---
 
 <style>
-/*
   .intro-header { position: relative; }
 
   .intro-header:before {
     content: ''; position: absolute; top: 0; left: 0; background: rgba(0,0,0,0.7); width: 100%; height: 100%; z-index: 0;
   }
-*/
+
   .highlighted {
     border-left: 4px solid #0366d6;
     background: #fafafa;
