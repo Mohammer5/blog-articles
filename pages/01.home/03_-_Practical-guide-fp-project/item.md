@@ -407,7 +407,8 @@ Appending an item to an array can still be done like this inside
 the reducer:
 
 ```js
-[ ...items, newItem ]```
+[ ...items, newItem ]
+```
 
 ### RxJs
 
